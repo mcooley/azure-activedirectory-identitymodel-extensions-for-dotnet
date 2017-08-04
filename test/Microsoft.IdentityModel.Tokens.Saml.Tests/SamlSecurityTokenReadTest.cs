@@ -44,13 +44,13 @@ namespace Microsoft.IdentityModel.Tokens.Saml.Tests
             var context = new CompareContext($"{this}.SamlSecurityTokenReadFrom, {theoryData.TestId}");
             try
             {
-                var sr = new StringReader(theoryData.SamlSecurityTokenTestSet.Xml);
+                var sr = new StringReader(theoryData.SamlTokenTestSet.Xml);
                 var reader = XmlDictionaryReader.CreateDictionaryReader(XmlReader.Create(sr));
                 var samlSerializer = theoryData.SamlSerializer;
                 var assertion = samlSerializer.ReadAssertion(reader);
                 theoryData.ExpectedException.ProcessNoException();
 
-                IdentityComparer.AreEqual(assertion, theoryData.SamlSecurityTokenTestSet.SamlSecurityToken.Assertion, context);
+                IdentityComparer.AreEqual(assertion, (theoryData.SamlTokenTestSet.SecurityToken as SamlSecurityToken).Assertion, context);
             }
             catch (Exception ex)
             {
@@ -69,13 +69,12 @@ namespace Microsoft.IdentityModel.Tokens.Saml.Tests
                     new SamlTheoryData
                     {
                         First = true,
-                        SamlSecurityTokenTestSet = RefrenceTokens.SamlSecurityTokenValid,
+                        SamlTokenTestSet = ReferenceSaml.SamlSecurityTokenValid,
                         SamlSerializer = new SamlSerializer(),
-                        TestId = nameof(RefrenceTokens.SamlSecurityTokenValid)
+                        TestId = nameof(ReferenceSaml.SamlSecurityTokenValid)
                     }
                 };
             }
         }
-
     }
 }
