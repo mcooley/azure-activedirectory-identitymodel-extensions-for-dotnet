@@ -562,7 +562,12 @@ namespace Microsoft.IdentityModel.Tokens.Saml
                 }
 
                 nameSpace = reader.LookupNamespace(prefix);
-                var authorityKind = new XmlQualifiedName(localName, nameSpace);
+                XmlQualifiedName authorityKind;
+
+                if (string.IsNullOrEmpty(nameSpace))
+                    authorityKind = new XmlQualifiedName(authKind, nameSpace);
+                else
+                    authorityKind = new XmlQualifiedName(localName, nameSpace);
 
                 var binding = reader.GetAttribute(SamlConstants.Attributes.Binding, null);
                 if (string.IsNullOrEmpty(binding))
