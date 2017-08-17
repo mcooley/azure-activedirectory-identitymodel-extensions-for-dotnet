@@ -29,6 +29,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Security.Cryptography;
+using System.Text;
 using System.Xml;
 using Microsoft.IdentityModel.Tests;
 using Microsoft.IdentityModel.Tokens;
@@ -43,364 +44,364 @@ namespace Microsoft.IdentityModel.Protocols.WsFederation.Tests
     public class WsFederationConfigurationRetrieverTests
     {
 
-#pragma warning disable CS3016 // Arrays as attribute arguments is not CLS-compliant
-        [Theory, MemberData("ReadMetadataTheoryData")]
-#pragma warning restore CS3016 // Arrays as attribute arguments is not CLS-compliant
-        public void ReadMetadata(WsFederationMetadataTheoryData theoryData)
-        {
-            TestUtilities.WriteHeader($"{this}.ReadMetadata", theoryData);
-            var context = new CompareContext($"{this}.ReadMetadata, {theoryData.TestId}");
-            try
-            {
-                var reader = XmlReader.Create(new StringReader(theoryData.Metadata));
-                var configuration = theoryData.Serializer.ReadMetadata(reader);
+//#pragma warning disable CS3016 // Arrays as attribute arguments is not CLS-compliant
+//        [Theory, MemberData("ReadMetadataTheoryData")]
+//#pragma warning restore CS3016 // Arrays as attribute arguments is not CLS-compliant
+//        public void ReadMetadata(WsFederationMetadataTheoryData theoryData)
+//        {
+//            TestUtilities.WriteHeader($"{this}.ReadMetadata", theoryData);
+//            var context = new CompareContext($"{this}.ReadMetadata, {theoryData.TestId}");
+//            try
+//            {
+//                var reader = XmlReader.Create(new StringReader(theoryData.Metadata));
+//                var configuration = theoryData.Serializer.ReadMetadata(reader);
 
-                if (theoryData.SigingKey != null)
-                    configuration.Signature.Verify(theoryData.SigingKey);
+//                if (theoryData.SigingKey != null)
+//                    configuration.Signature.Verify(theoryData.SigingKey);
 
-                theoryData.ExpectedException.ProcessNoException(context);
+//                theoryData.ExpectedException.ProcessNoException(context);
 
-                IdentityComparer.AreWsFederationConfigurationsEqual(theoryData.Configuration, configuration, context);
-            }
-            catch (Exception ex)
-            {
-                theoryData.ExpectedException.ProcessException(ex, context);
-            }
+//                IdentityComparer.AreWsFederationConfigurationsEqual(theoryData.Configuration, configuration, context);
+//            }
+//            catch (Exception ex)
+//            {
+//                theoryData.ExpectedException.ProcessException(ex, context);
+//            }
 
-            TestUtilities.AssertFailIfErrors(context);
-        }
+//            TestUtilities.AssertFailIfErrors(context);
+//        }
 
-        public static TheoryData<WsFederationMetadataTheoryData> ReadMetadataTheoryData
-        {
-            get
-            {
-                // uncomment to see exception displayed to user.
-                // ExpectedException.DefaultVerbose = true;
+//        public static TheoryData<WsFederationMetadataTheoryData> ReadMetadataTheoryData
+//        {
+//            get
+//            {
+//                // uncomment to see exception displayed to user.
+//                // ExpectedException.DefaultVerbose = true;
 
-                return new TheoryData<WsFederationMetadataTheoryData>
-                {
-                    new WsFederationMetadataTheoryData
-                    {
-                        Configuration = ReferenceMetadata.AADCommonEndpoint,
-                        First = true,
-                        Metadata = ReferenceMetadata.AADCommonMetadata,
-                        SigingKey = ReferenceMetadata.MetadataSigningKey,
-                        TestId = nameof(ReferenceMetadata.AADCommonMetadata)
-                    },
-                    new WsFederationMetadataTheoryData
-                    {
-                        Configuration = ReferenceMetadata.AADCommonFormated,
-                        Metadata = ReferenceMetadata.AADCommonMetadataFormated,
-                        TestId = nameof(ReferenceMetadata.AADCommonMetadataFormated)
-                    },
-                    new WsFederationMetadataTheoryData
-                    {
-                        ExpectedException = new ExpectedException(typeof(XmlValidationException), "IDX21200:"),
-                        Configuration = ReferenceMetadata.AADCommonFormated,
-                        Metadata = ReferenceMetadata.AADCommonMetadataFormated,
-                        SigingKey = ReferenceMetadata.MetadataSigningKey,
-                        TestId = nameof(ReferenceMetadata.AADCommonMetadataFormated) + " Signature Failure"
-                    },
-                    new WsFederationMetadataTheoryData
-                    {
-                        Configuration = ReferenceMetadata.AADCommonFormated,
-                        Metadata = ReferenceMetadata.MetadataWithBlanks,
-                        TestId = nameof(ReferenceMetadata.MetadataWithBlanks)
-                    },
-                    new WsFederationMetadataTheoryData
-                    {
-                        Configuration = new WsFederationConfiguration
-                        {
-                            Issuer = ReferenceMetadata.Issuer,
-                            TokenEndpoint = ReferenceMetadata.TokenEndpoint
-                        },
-                        Metadata = ReferenceMetadata.MetadataNoKeyDescriptorForSigningInRoleDescriptor,
-                        TestId = nameof(ReferenceMetadata.MetadataNoKeyDescriptorForSigningInRoleDescriptor)
-                    },
-                    new WsFederationMetadataTheoryData
-                    {
-                        ExpectedException = new ExpectedException(typeof(XmlReadException), "IDX13001:"),
-                        Metadata = ReferenceMetadata.MetadataNoIssuer,
-                        TestId = nameof(ReferenceMetadata.MetadataNoIssuer)
-                    },
-                    new WsFederationMetadataTheoryData
-                    {
-                        ExpectedException = new ExpectedException(typeof(XmlReadException), "IDX13003:"),
-                        Metadata = ReferenceMetadata.MetadataNoTokenUri,
-                        TestId = nameof(ReferenceMetadata.MetadataNoTokenUri)
-                    },
-                    new WsFederationMetadataTheoryData
-                    {
-                        ExpectedException = new ExpectedException(typeof(XmlReadException), "IDX21017:", typeof(FormatException)),
-                        Metadata = ReferenceMetadata.MetadataMalformedCertificate,
-                        TestId = nameof(ReferenceMetadata.MetadataMalformedCertificate)
-                    },
-                    new WsFederationMetadataTheoryData
-                    {
-                        ExpectedException = new ExpectedException(typeof(XmlReadException), "IDX21025:"),
-                        Metadata = ReferenceMetadata.MetadataUnknownElementBeforeSignatureEndElement,
-                        TestId = nameof(ReferenceMetadata.MetadataUnknownElementBeforeSignatureEndElement)
-                    },
-                    new WsFederationMetadataTheoryData
-                    {
-                        ExpectedException = new ExpectedException(typeof(XmlReadException), "IDX21011:"),
-                        Metadata = ReferenceMetadata.MetadataNoSignedInfoInSignature,
-                        TestId = nameof(ReferenceMetadata.MetadataNoSignedInfoInSignature)
-                    },
-                    new WsFederationMetadataTheoryData
-                    {
-                        ExpectedException = new ExpectedException(typeof(XmlReadException), "IDX21011:"),
-                        Metadata = ReferenceMetadata.MetadataNoEntityDescriptor,
-                        TestId = nameof(ReferenceMetadata.MetadataNoEntityDescriptor)
-                    },
-                    new WsFederationMetadataTheoryData
-                    {
-                        ExpectedException = new ExpectedException(typeof(XmlReadException), "IDX13004:"),
-                        Metadata = ReferenceMetadata.MetadataNoRoleDescriptor,
-                        TestId = nameof(ReferenceMetadata.MetadataNoRoleDescriptor)
-                    },
-                    new WsFederationMetadataTheoryData
-                    {
-                        ExpectedException = new ExpectedException(typeof(XmlReadException), "IDX13002:"),
-                        Metadata = ReferenceMetadata.MetadataNoKeyInfoInKeyDescriptor,
-                        TestId = nameof(ReferenceMetadata.MetadataNoKeyInfoInKeyDescriptor)
-                    },
-                    new WsFederationMetadataTheoryData
-                    {
-                        Configuration = new WsFederationConfiguration
-                        {
-                            Issuer = ReferenceMetadata.Issuer
-                        },
-                        Metadata = ReferenceMetadata.MetadataNoSecurityTokenSeviceEndpointInRoleDescriptor,
-                        TestId = nameof(ReferenceMetadata.MetadataNoSecurityTokenSeviceEndpointInRoleDescriptor)
-                    },
-                    new WsFederationMetadataTheoryData
-                    {
-                        ExpectedException = new ExpectedException(typeof(XmlReadException), "IDX21011:"),
-                        Metadata = ReferenceMetadata.MetadataNoEndpointReference,
-                        TestId = nameof(ReferenceMetadata.MetadataNoEndpointReference)
-                    },
-                    new WsFederationMetadataTheoryData
-                    {
-                        ExpectedException = new ExpectedException(typeof(XmlReadException), "IDX21011:"),
-                        Metadata = ReferenceMetadata.MetadataNoAddressInEndpointReference,
-                        TestId = nameof(ReferenceMetadata.MetadataNoAddressInEndpointReference)
-                    }
-                };
-            }
-        }
+//                return new TheoryData<WsFederationMetadataTheoryData>
+//                {
+//                    new WsFederationMetadataTheoryData
+//                    {
+//                        Configuration = ReferenceMetadata.AADCommonEndpoint,
+//                        First = true,
+//                        Metadata = ReferenceMetadata.AADCommonMetadata,
+//                        SigingKey = ReferenceMetadata.MetadataSigningKey,
+//                        TestId = nameof(ReferenceMetadata.AADCommonMetadata)
+//                    },
+//                    new WsFederationMetadataTheoryData
+//                    {
+//                        Configuration = ReferenceMetadata.AADCommonFormated,
+//                        Metadata = ReferenceMetadata.AADCommonMetadataFormated,
+//                        TestId = nameof(ReferenceMetadata.AADCommonMetadataFormated)
+//                    },
+//                    new WsFederationMetadataTheoryData
+//                    {
+//                        ExpectedException = new ExpectedException(typeof(XmlValidationException), "IDX21200:"),
+//                        Configuration = ReferenceMetadata.AADCommonFormated,
+//                        Metadata = ReferenceMetadata.AADCommonMetadataFormated,
+//                        SigingKey = ReferenceMetadata.MetadataSigningKey,
+//                        TestId = nameof(ReferenceMetadata.AADCommonMetadataFormated) + " Signature Failure"
+//                    },
+//                    new WsFederationMetadataTheoryData
+//                    {
+//                        Configuration = ReferenceMetadata.AADCommonFormated,
+//                        Metadata = ReferenceMetadata.MetadataWithBlanks,
+//                        TestId = nameof(ReferenceMetadata.MetadataWithBlanks)
+//                    },
+//                    new WsFederationMetadataTheoryData
+//                    {
+//                        Configuration = new WsFederationConfiguration
+//                        {
+//                            Issuer = ReferenceMetadata.Issuer,
+//                            TokenEndpoint = ReferenceMetadata.TokenEndpoint
+//                        },
+//                        Metadata = ReferenceMetadata.MetadataNoKeyDescriptorForSigningInRoleDescriptor,
+//                        TestId = nameof(ReferenceMetadata.MetadataNoKeyDescriptorForSigningInRoleDescriptor)
+//                    },
+//                    new WsFederationMetadataTheoryData
+//                    {
+//                        ExpectedException = new ExpectedException(typeof(XmlReadException), "IDX13001:"),
+//                        Metadata = ReferenceMetadata.MetadataNoIssuer,
+//                        TestId = nameof(ReferenceMetadata.MetadataNoIssuer)
+//                    },
+//                    new WsFederationMetadataTheoryData
+//                    {
+//                        ExpectedException = new ExpectedException(typeof(XmlReadException), "IDX13003:"),
+//                        Metadata = ReferenceMetadata.MetadataNoTokenUri,
+//                        TestId = nameof(ReferenceMetadata.MetadataNoTokenUri)
+//                    },
+//                    new WsFederationMetadataTheoryData
+//                    {
+//                        ExpectedException = new ExpectedException(typeof(XmlReadException), "IDX21017:", typeof(FormatException)),
+//                        Metadata = ReferenceMetadata.MetadataMalformedCertificate,
+//                        TestId = nameof(ReferenceMetadata.MetadataMalformedCertificate)
+//                    },
+//                    new WsFederationMetadataTheoryData
+//                    {
+//                        ExpectedException = new ExpectedException(typeof(XmlReadException), "IDX21025:"),
+//                        Metadata = ReferenceMetadata.MetadataUnknownElementBeforeSignatureEndElement,
+//                        TestId = nameof(ReferenceMetadata.MetadataUnknownElementBeforeSignatureEndElement)
+//                    },
+//                    new WsFederationMetadataTheoryData
+//                    {
+//                        ExpectedException = new ExpectedException(typeof(XmlReadException), "IDX21011:"),
+//                        Metadata = ReferenceMetadata.MetadataNoSignedInfoInSignature,
+//                        TestId = nameof(ReferenceMetadata.MetadataNoSignedInfoInSignature)
+//                    },
+//                    new WsFederationMetadataTheoryData
+//                    {
+//                        ExpectedException = new ExpectedException(typeof(XmlReadException), "IDX21011:"),
+//                        Metadata = ReferenceMetadata.MetadataNoEntityDescriptor,
+//                        TestId = nameof(ReferenceMetadata.MetadataNoEntityDescriptor)
+//                    },
+//                    new WsFederationMetadataTheoryData
+//                    {
+//                        ExpectedException = new ExpectedException(typeof(XmlReadException), "IDX13004:"),
+//                        Metadata = ReferenceMetadata.MetadataNoRoleDescriptor,
+//                        TestId = nameof(ReferenceMetadata.MetadataNoRoleDescriptor)
+//                    },
+//                    new WsFederationMetadataTheoryData
+//                    {
+//                        ExpectedException = new ExpectedException(typeof(XmlReadException), "IDX13002:"),
+//                        Metadata = ReferenceMetadata.MetadataNoKeyInfoInKeyDescriptor,
+//                        TestId = nameof(ReferenceMetadata.MetadataNoKeyInfoInKeyDescriptor)
+//                    },
+//                    new WsFederationMetadataTheoryData
+//                    {
+//                        Configuration = new WsFederationConfiguration
+//                        {
+//                            Issuer = ReferenceMetadata.Issuer
+//                        },
+//                        Metadata = ReferenceMetadata.MetadataNoSecurityTokenSeviceEndpointInRoleDescriptor,
+//                        TestId = nameof(ReferenceMetadata.MetadataNoSecurityTokenSeviceEndpointInRoleDescriptor)
+//                    },
+//                    new WsFederationMetadataTheoryData
+//                    {
+//                        ExpectedException = new ExpectedException(typeof(XmlReadException), "IDX21011:"),
+//                        Metadata = ReferenceMetadata.MetadataNoEndpointReference,
+//                        TestId = nameof(ReferenceMetadata.MetadataNoEndpointReference)
+//                    },
+//                    new WsFederationMetadataTheoryData
+//                    {
+//                        ExpectedException = new ExpectedException(typeof(XmlReadException), "IDX21011:"),
+//                        Metadata = ReferenceMetadata.MetadataNoAddressInEndpointReference,
+//                        TestId = nameof(ReferenceMetadata.MetadataNoAddressInEndpointReference)
+//                    }
+//                };
+//            }
+//        }
 
-#pragma warning disable CS3016 // Arrays as attribute arguments is not CLS-compliant
-        [Theory, MemberData("ReadEntityDescriptorTheoryData")]
-#pragma warning restore CS3016 // Arrays as attribute arguments is not CLS-compliant
-        public void ReadEntityDescriptor(WsFederationMetadataTheoryData theoryData)
-        {
-            TestUtilities.WriteHeader($"{this}.ReadEntityDescriptor", theoryData);
-            var serializer = new WsFederationMetadataSerializerPublic();
-            try
-            {
-                serializer.ReadEntityDescriptorPublic(null, XmlReader.Create(new StringReader("some string")));
-                theoryData.ExpectedException.ProcessNoException();
-            }
-            catch (Exception ex)
-            {
-                theoryData.ExpectedException.ProcessException(ex);
-            }
+//#pragma warning disable CS3016 // Arrays as attribute arguments is not CLS-compliant
+//        [Theory, MemberData("ReadEntityDescriptorTheoryData")]
+//#pragma warning restore CS3016 // Arrays as attribute arguments is not CLS-compliant
+//        public void ReadEntityDescriptor(WsFederationMetadataTheoryData theoryData)
+//        {
+//            TestUtilities.WriteHeader($"{this}.ReadEntityDescriptor", theoryData);
+//            var serializer = new WsFederationMetadataSerializerPublic();
+//            try
+//            {
+//                serializer.ReadEntityDescriptorPublic(null, XmlReader.Create(new StringReader("some string")));
+//                theoryData.ExpectedException.ProcessNoException();
+//            }
+//            catch (Exception ex)
+//            {
+//                theoryData.ExpectedException.ProcessException(ex);
+//            }
 
-            try
-            {
-                serializer.ReadEntityDescriptorPublic(new WsFederationConfiguration(), null);
-                theoryData.ExpectedException.ProcessNoException();
-            }
-            catch (Exception ex)
-            {
-                theoryData.ExpectedException.ProcessException(ex);
-            }
-        }
+//            try
+//            {
+//                serializer.ReadEntityDescriptorPublic(new WsFederationConfiguration(), null);
+//                theoryData.ExpectedException.ProcessNoException();
+//            }
+//            catch (Exception ex)
+//            {
+//                theoryData.ExpectedException.ProcessException(ex);
+//            }
+//        }
 
-#pragma warning disable CS3016 // Arrays as attribute arguments is not CLS-compliant
-        [Theory, MemberData("ReadKeyDescriptorForSigningTheoryData")]
-#pragma warning restore CS3016 // Arrays as attribute arguments is not CLS-compliant
-        public void ReadKeyDescriptorForSigning(WsFederationMetadataTheoryData theoryData)
-        {
-            TestUtilities.WriteHeader($"{this}.ReadKeyDescriptorForSigning", theoryData);
-            var serializer = new WsFederationMetadataSerializerPublic();
-            try
-            {
-                serializer.ReadKeyDescriptorForSigningPublic(null, XmlReader.Create(new StringReader("some string")));
-                theoryData.ExpectedException.ProcessNoException();
-            }
-            catch (Exception ex)
-            {
-                theoryData.ExpectedException.ProcessException(ex);
-            }
+//#pragma warning disable CS3016 // Arrays as attribute arguments is not CLS-compliant
+//        [Theory, MemberData("ReadKeyDescriptorForSigningTheoryData")]
+//#pragma warning restore CS3016 // Arrays as attribute arguments is not CLS-compliant
+//        public void ReadKeyDescriptorForSigning(WsFederationMetadataTheoryData theoryData)
+//        {
+//            TestUtilities.WriteHeader($"{this}.ReadKeyDescriptorForSigning", theoryData);
+//            var serializer = new WsFederationMetadataSerializerPublic();
+//            try
+//            {
+//                serializer.ReadKeyDescriptorForSigningPublic(null, XmlReader.Create(new StringReader("some string")));
+//                theoryData.ExpectedException.ProcessNoException();
+//            }
+//            catch (Exception ex)
+//            {
+//                theoryData.ExpectedException.ProcessException(ex);
+//            }
 
-            try
-            {
-                serializer.ReadKeyDescriptorForSigningPublic(new WsFederationConfiguration(), null);
-                theoryData.ExpectedException.ProcessNoException();
-            }
-            catch (Exception ex)
-            {
-                theoryData.ExpectedException.ProcessException(ex);
-            }
-        }
+//            try
+//            {
+//                serializer.ReadKeyDescriptorForSigningPublic(new WsFederationConfiguration(), null);
+//                theoryData.ExpectedException.ProcessNoException();
+//            }
+//            catch (Exception ex)
+//            {
+//                theoryData.ExpectedException.ProcessException(ex);
+//            }
+//        }
 
-#pragma warning disable CS3016 // Arrays as attribute arguments is not CLS-compliant
-        [Theory, MemberData("ReadKeyDescriptorForSigningKeyUseTheoryData")]
-#pragma warning restore CS3016 // Arrays as attribute arguments is not CLS-compliant
-        public void ReadKeyDescriptorForSigningKeyUse(WsFederationMetadataTheoryData theoryData)
-        {
-            TestUtilities.WriteHeader($"{this}.ReadKeyDescriptorForSigningKeyUse", theoryData);
-            var serializer = new WsFederationMetadataSerializerPublic();
-            try
-            {
-                serializer.ReadKeyDescriptorForSigningPublic(new WsFederationConfiguration(), XmlReader.Create(new StringReader(theoryData.Metadata)));
-                theoryData.ExpectedException.ProcessNoException();
-            }
-            catch (Exception ex)
-            {
-                theoryData.ExpectedException.ProcessException(ex);
-            }
-        }
+//#pragma warning disable CS3016 // Arrays as attribute arguments is not CLS-compliant
+//        [Theory, MemberData("ReadKeyDescriptorForSigningKeyUseTheoryData")]
+//#pragma warning restore CS3016 // Arrays as attribute arguments is not CLS-compliant
+//        public void ReadKeyDescriptorForSigningKeyUse(WsFederationMetadataTheoryData theoryData)
+//        {
+//            TestUtilities.WriteHeader($"{this}.ReadKeyDescriptorForSigningKeyUse", theoryData);
+//            var serializer = new WsFederationMetadataSerializerPublic();
+//            try
+//            {
+//                serializer.ReadKeyDescriptorForSigningPublic(new WsFederationConfiguration(), XmlReader.Create(new StringReader(theoryData.Metadata)));
+//                theoryData.ExpectedException.ProcessNoException();
+//            }
+//            catch (Exception ex)
+//            {
+//                theoryData.ExpectedException.ProcessException(ex);
+//            }
+//        }
 
-#pragma warning disable CS3016 // Arrays as attribute arguments is not CLS-compliant
-        [Theory, MemberData("ReadSecurityTokenServiceTypeRoleDescriptorTheoryData")]
-#pragma warning restore CS3016 // Arrays as attribute arguments is not CLS-compliant
-        public void ReadSecurityTokenServiceTypeRoleDescriptor(WsFederationMetadataTheoryData theoryData)
-        {
-            TestUtilities.WriteHeader($"{this}.ReadSecurityTokenServiceTypeRoleDescriptor", theoryData);
-            var serializer = new WsFederationMetadataSerializerPublic();
-            try
-            { 
-                serializer.ReadSecurityTokenServiceTypeRoleDescriptorPublic(null, XmlReader.Create(new StringReader("some string")));
-                theoryData.ExpectedException.ProcessNoException();
-            }
-            catch (Exception ex)
-            {
-                theoryData.ExpectedException.ProcessException(ex);
-            }
+//#pragma warning disable CS3016 // Arrays as attribute arguments is not CLS-compliant
+//        [Theory, MemberData("ReadSecurityTokenServiceTypeRoleDescriptorTheoryData")]
+//#pragma warning restore CS3016 // Arrays as attribute arguments is not CLS-compliant
+//        public void ReadSecurityTokenServiceTypeRoleDescriptor(WsFederationMetadataTheoryData theoryData)
+//        {
+//            TestUtilities.WriteHeader($"{this}.ReadSecurityTokenServiceTypeRoleDescriptor", theoryData);
+//            var serializer = new WsFederationMetadataSerializerPublic();
+//            try
+//            { 
+//                serializer.ReadSecurityTokenServiceTypeRoleDescriptorPublic(null, XmlReader.Create(new StringReader("some string")));
+//                theoryData.ExpectedException.ProcessNoException();
+//            }
+//            catch (Exception ex)
+//            {
+//                theoryData.ExpectedException.ProcessException(ex);
+//            }
 
-            try
-            {
-                serializer.ReadSecurityTokenServiceTypeRoleDescriptorPublic(new WsFederationConfiguration(), null);
-                theoryData.ExpectedException.ProcessNoException();
-            }
-            catch (Exception ex)
-            {
-                theoryData.ExpectedException.ProcessException(ex);
-            }
-        }
+//            try
+//            {
+//                serializer.ReadSecurityTokenServiceTypeRoleDescriptorPublic(new WsFederationConfiguration(), null);
+//                theoryData.ExpectedException.ProcessNoException();
+//            }
+//            catch (Exception ex)
+//            {
+//                theoryData.ExpectedException.ProcessException(ex);
+//            }
+//        }
 
-#pragma warning disable CS3016 // Arrays as attribute arguments is not CLS-compliant
-        [Theory, MemberData("ReadSecurityTokenEndpointTheoryData")]
-#pragma warning restore CS3016 // Arrays as attribute arguments is not CLS-compliant
-        public void ReadSecurityTokenEndpoint(WsFederationMetadataTheoryData theoryData)
-        {
-            TestUtilities.WriteHeader($"{this}.ReadSecurityTokenEndpoint", theoryData);
-            var serializer = new WsFederationMetadataSerializerPublic();
-            try
-            {
-                serializer.ReadSecurityTokenEndpointPublic(null, XmlReader.Create(new StringReader("some string")));
-                theoryData.ExpectedException.ProcessNoException();
-            }
-            catch (Exception ex)
-            {
-                theoryData.ExpectedException.ProcessException(ex);
-            }
+//#pragma warning disable CS3016 // Arrays as attribute arguments is not CLS-compliant
+//        [Theory, MemberData("ReadSecurityTokenEndpointTheoryData")]
+//#pragma warning restore CS3016 // Arrays as attribute arguments is not CLS-compliant
+//        public void ReadSecurityTokenEndpoint(WsFederationMetadataTheoryData theoryData)
+//        {
+//            TestUtilities.WriteHeader($"{this}.ReadSecurityTokenEndpoint", theoryData);
+//            var serializer = new WsFederationMetadataSerializerPublic();
+//            try
+//            {
+//                serializer.ReadSecurityTokenEndpointPublic(null, XmlReader.Create(new StringReader("some string")));
+//                theoryData.ExpectedException.ProcessNoException();
+//            }
+//            catch (Exception ex)
+//            {
+//                theoryData.ExpectedException.ProcessException(ex);
+//            }
 
-            try
-            { 
-                serializer.ReadSecurityTokenEndpointPublic(new WsFederationConfiguration(), null);
-                theoryData.ExpectedException.ProcessNoException();
-            }
-            catch (Exception ex)
-            {
-                theoryData.ExpectedException.ProcessException(ex);
-            }
-        }
+//            try
+//            { 
+//                serializer.ReadSecurityTokenEndpointPublic(new WsFederationConfiguration(), null);
+//                theoryData.ExpectedException.ProcessNoException();
+//            }
+//            catch (Exception ex)
+//            {
+//                theoryData.ExpectedException.ProcessException(ex);
+//            }
+//        }
 
-        public static TheoryData<WsFederationMetadataTheoryData> ReadEntityDescriptorTheoryData
-        {
-            get
-            {
-                return new TheoryData<WsFederationMetadataTheoryData>
-                {
-                    new WsFederationMetadataTheoryData
-                    {
-                        ExpectedException = ExpectedException.ArgumentNullException("IDX10000:"),
-                        TestId = "ReadEntityDescriptor"
-                    }
-                };
-            }
-        }
+//        public static TheoryData<WsFederationMetadataTheoryData> ReadEntityDescriptorTheoryData
+//        {
+//            get
+//            {
+//                return new TheoryData<WsFederationMetadataTheoryData>
+//                {
+//                    new WsFederationMetadataTheoryData
+//                    {
+//                        ExpectedException = ExpectedException.ArgumentNullException("IDX10000:"),
+//                        TestId = "ReadEntityDescriptor"
+//                    }
+//                };
+//            }
+//        }
 
-        public static TheoryData<WsFederationMetadataTheoryData> ReadKeyDescriptorForSigningTheoryData
-        {
-            get
-            {
-                return new TheoryData<WsFederationMetadataTheoryData>
-                {
-                    new WsFederationMetadataTheoryData
-                    {
-                        ExpectedException = ExpectedException.ArgumentNullException("IDX10000:"),
-                        TestId = "ReadKeyDescriptorForSigning"
-                    }
-                };
-            }
-        }
+//        public static TheoryData<WsFederationMetadataTheoryData> ReadKeyDescriptorForSigningTheoryData
+//        {
+//            get
+//            {
+//                return new TheoryData<WsFederationMetadataTheoryData>
+//                {
+//                    new WsFederationMetadataTheoryData
+//                    {
+//                        ExpectedException = ExpectedException.ArgumentNullException("IDX10000:"),
+//                        TestId = "ReadKeyDescriptorForSigning"
+//                    }
+//                };
+//            }
+//        }
 
-        public static TheoryData<WsFederationMetadataTheoryData> ReadKeyDescriptorForSigningKeyUseTheoryData
-        {
-            get
-            {
-                return new TheoryData<WsFederationMetadataTheoryData>
-                {
-                    new WsFederationMetadataTheoryData
-                    {
-                        ExpectedException = ExpectedException.NoExceptionExpected,
-                        Metadata = ReferenceMetadata.KeyDescriptorNoKeyUse,
-                        TestId = "ReadKeyDescriptorForSigning: 'use' is null"
-                    },
-                    new WsFederationMetadataTheoryData
-                    {
-                        ExpectedException = new ExpectedException(typeof(XmlReadException), "IDX13009:"),
-                        Metadata = ReferenceMetadata.KeyDescriptorKeyUseNotForSigning,
-                        TestId = "ReadKeyDescriptorForSigning: 'use' is not 'signing'"
-                    }
-                };
-            }
-        }
+//        public static TheoryData<WsFederationMetadataTheoryData> ReadKeyDescriptorForSigningKeyUseTheoryData
+//        {
+//            get
+//            {
+//                return new TheoryData<WsFederationMetadataTheoryData>
+//                {
+//                    new WsFederationMetadataTheoryData
+//                    {
+//                        ExpectedException = ExpectedException.NoExceptionExpected,
+//                        Metadata = ReferenceMetadata.KeyDescriptorNoKeyUse,
+//                        TestId = "ReadKeyDescriptorForSigning: 'use' is null"
+//                    },
+//                    new WsFederationMetadataTheoryData
+//                    {
+//                        ExpectedException = new ExpectedException(typeof(XmlReadException), "IDX13009:"),
+//                        Metadata = ReferenceMetadata.KeyDescriptorKeyUseNotForSigning,
+//                        TestId = "ReadKeyDescriptorForSigning: 'use' is not 'signing'"
+//                    }
+//                };
+//            }
+//        }
 
-        public static TheoryData<WsFederationMetadataTheoryData> ReadSecurityTokenServiceTypeRoleDescriptorTheoryData
-        {
-            get
-            {
-                return new TheoryData<WsFederationMetadataTheoryData>
-                {
-                    new WsFederationMetadataTheoryData
-                    {
-                        ExpectedException = ExpectedException.ArgumentNullException("IDX10000:"),
-                        TestId = "ReadSecurityTokenServiceTypeRoleDescriptor"
-                    }
-                };
-            }
-        }
+//        public static TheoryData<WsFederationMetadataTheoryData> ReadSecurityTokenServiceTypeRoleDescriptorTheoryData
+//        {
+//            get
+//            {
+//                return new TheoryData<WsFederationMetadataTheoryData>
+//                {
+//                    new WsFederationMetadataTheoryData
+//                    {
+//                        ExpectedException = ExpectedException.ArgumentNullException("IDX10000:"),
+//                        TestId = "ReadSecurityTokenServiceTypeRoleDescriptor"
+//                    }
+//                };
+//            }
+//        }
 
-        public static TheoryData<WsFederationMetadataTheoryData> ReadSecurityTokenEndpointTheoryData
-        {
-            get
-            {
-                return new TheoryData<WsFederationMetadataTheoryData>
-                {
-                    new WsFederationMetadataTheoryData
-                    {
-                        ExpectedException = ExpectedException.ArgumentNullException("IDX10000:"),
-                        TestId = "ReadSecurityTokenEndpoint"
-                    }
-                };
-            }
-        }
+//        public static TheoryData<WsFederationMetadataTheoryData> ReadSecurityTokenEndpointTheoryData
+//        {
+//            get
+//            {
+//                return new TheoryData<WsFederationMetadataTheoryData>
+//                {
+//                    new WsFederationMetadataTheoryData
+//                    {
+//                        ExpectedException = ExpectedException.ArgumentNullException("IDX10000:"),
+//                        TestId = "ReadSecurityTokenEndpoint"
+//                    }
+//                };
+//            }
+//        }
 
         public class WsFederationMetadataTheoryData : TheoryDataBase
         {
@@ -415,6 +416,56 @@ namespace Microsoft.IdentityModel.Protocols.WsFederation.Tests
             public override string ToString()
             {
                 return $"TestId: {TestId}, {ExpectedException}";
+            }
+        }
+
+#pragma warning disable CS3016 // Arrays as attribute arguments is not CLS-compliant
+        [Theory, MemberData("WriteMetadataTheoryData")]
+#pragma warning restore CS3016 // Arrays as attribute arguments is not CLS-compliant
+        public void WriteMetadata(WsFederationMetadataTheoryData theoryData)
+        {
+            TestUtilities.WriteHeader($"{this}.WriteMetadata", theoryData);
+            var context = new CompareContext($"{this}.WriteMetadata, {theoryData.TestId}");
+            try
+            {
+                var settings = new XmlWriterSettings();
+                var builder = new StringBuilder();
+
+                using (var writer = XmlWriter.Create(builder, settings))
+                {
+                    var serializer = new WsFederationMetadataSerializer();
+                    serializer.WriteMetadata(writer, theoryData.Configuration);
+                    writer.Flush();
+                    var xml = builder.ToString();
+                }
+
+                theoryData.ExpectedException.ProcessNoException(context);
+
+                //IdentityComparer.AreWsFederationConfigurationsEqual(theoryData.Configuration, configuration, context);
+            }
+            catch (Exception ex)
+            {
+                theoryData.ExpectedException.ProcessException(ex, context);
+            }
+
+            TestUtilities.AssertFailIfErrors(context);
+        }
+
+        public static TheoryData<WsFederationMetadataTheoryData> WriteMetadataTheoryData
+        {
+            get
+            {
+                // uncomment to see exception displayed to user.
+                // ExpectedException.DefaultVerbose = true;
+
+                return new TheoryData<WsFederationMetadataTheoryData>
+                {
+                    new WsFederationMetadataTheoryData
+                    {
+                        Configuration = ReferenceMetadata.AADCommonFormated,
+                        TestId = nameof(ReferenceMetadata.AADCommonFormated)
+                    }
+                };
             }
         }
 

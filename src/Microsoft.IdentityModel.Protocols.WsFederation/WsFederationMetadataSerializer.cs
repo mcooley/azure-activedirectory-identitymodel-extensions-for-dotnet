@@ -49,6 +49,7 @@ namespace Microsoft.IdentityModel.Protocols.WsFederation
         /// </summary>
         public WsFederationMetadataSerializer() { }
 
+#region Read Metadata
         /// <summary>
         /// Read metadata and create the corresponding WsFed configuration.
         /// </summary>
@@ -268,5 +269,36 @@ namespace Microsoft.IdentityModel.Protocols.WsFederation
             char[] charsToTrim = { ' ', '\n' };
             return stringToTrim.Trim(charsToTrim);
         }
+        #endregion
+
+#region Write Metadata
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="writer"></param>
+        /// <param name="configuration"></param>
+        /// <returns></returns>
+        public void WriteMetadata(XmlWriter writer, WsFederationConfiguration configuration)
+        {
+            if (writer == null)
+                throw LogArgumentNullException(nameof(writer));
+
+            if (configuration == null)
+                throw LogArgumentNullException(nameof(configuration));
+
+            writer.WriteStartDocument();
+
+            // <EntityDescriptor>
+            writer.WriteStartElement(Elements.EntityDescriptor, Namespaces.MetadataNamespace);
+
+            // @entityID
+            writer.WriteAttributeString(Attributes.EntityId, configuration.Issuer);
+
+            // </EntityDescriptor>
+            writer.WriteEndElement();
+
+            writer.WriteEndDocument();
+        }
+#endregion
     }
 }
